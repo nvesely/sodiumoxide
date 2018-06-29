@@ -24,15 +24,6 @@
 //!
 //! The crypto_secretstream_*() API was introduced in libsodium 1.0.14.
 //!
-//! # Example (stream encryption)
-//! ```
-//! use sodiumoxide::crypto::stream;
-//!
-//! let key = stream::gen_key();
-//! let nonce = stream::gen_nonce();
-//! let keystream = stream::stream(128, &nonce, &key); // generate 128 bytes of keystream
-//! ```
-//!
 //! # Example (encryption)
 //! ```
 //! use sodiumoxide::crypto::secretstream;
