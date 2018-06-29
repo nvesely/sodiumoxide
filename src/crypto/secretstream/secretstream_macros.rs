@@ -20,10 +20,12 @@ use std::mem;
 /// Number of bytes in a `Key`.
 pub const KEYBYTES: usize = $keybytes as usize;
 
-/// Number of bytes in a `Header`.
+/// An encrypted stream starts with a short header, whose size is `HEADERBYTES`
+/// bytes. That header must be sent/stored before the sequence of encrypted
+/// messages, as it is required to decrypt the stream.
 pub const HEADERBYTES: usize = $headerbytes as usize;
 
-/// Number of added bytes
+/// The ciphertext length is guaranteed to always be message length plus `ABYTES`.
 pub const ABYTES: usize = $abytes as usize;
 
 /// Tag message
