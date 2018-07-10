@@ -58,7 +58,11 @@
 
 extern crate libsodium_sys as ffi;
 
+#[macro_use]
+extern crate enum_primitive_derive;
 extern crate libc;
+extern crate num_traits;
+
 #[cfg(any(test, feature = "serde"))]
 extern crate serde;
 #[cfg(test)]

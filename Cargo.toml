@@ -19,8 +19,10 @@ exclude = [
 travis-ci = { repository = "sodiumoxide/sodiumoxide" }
 
 [dependencies]
+enum-primitive-derive = "^0.1"
 libc = { version = "^0.2.41" , default-features = false }
 libsodium-sys = { version = "0.1", path = "libsodium-sys" }
+num-traits = "^0.1"
 serde = { version = "^1.0.59", default-features = false, optional = true }
 
 [dev-dependencies]

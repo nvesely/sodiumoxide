@@ -27,6 +27,7 @@
 //! # Example (encryption)
 //! ```
 //! use sodiumoxide::crypto::secretstream;
+//! use sodiumoxide::crypto::secretstream::Tag;
 //!
 //! let key = secretstream::gen_key();
 //!
@@ -38,30 +39,30 @@
 //! let (mut enc_stream, header) = secretstream::init_push(&key);
 //!
 //! // encrypt first message, tagging it as message.
-//! let cyphertext1 = enc_stream.push(msg1.as_bytes(), None, secretstream::TAG_MESSAGE);
+//! let cyphertext1 = enc_stream.push(msg1.as_bytes(), None, Tag::Message);
 //!
 //! // encrypt second message, tagging it as message.
-//! let cyphertext2 = enc_stream.push(msg2.as_bytes(), None, secretstream::TAG_MESSAGE);
+//! let cyphertext2 = enc_stream.push(msg2.as_bytes(), None, Tag::Message);
 //!
 //! // encrypt third message, tagging it as final.
-//! let cyphertext3 = enc_stream.push(msg3.as_bytes(), None, secretstream::TAG_FINAL);
+//! let cyphertext3 = enc_stream.push(msg3.as_bytes(), None, Tag::Final);
 //!
 //! // initialize decrypt secret stream
 //! let mut dec_stream = secretstream::init_pull(&header, &key).unwrap();
 //!
 //! // decrypt first message.
 //! let (decrypted1, tag1) = dec_stream.pull(&cyphertext1, None).unwrap();
-//! assert_eq!(tag1, secretstream::TAG_MESSAGE);
+//! assert_eq!(tag1, Tag::Message);
 //! assert_eq!(msg1.as_bytes(), &decrypted1[..]);
 //!
 //! // decrypt second message.
 //! let (decrypted2, tag2) = dec_stream.pull(&cyphertext2, None).unwrap();
-//! assert_eq!(tag2, secretstream::TAG_MESSAGE);
+//! assert_eq!(tag2, Tag::Message);
 //! assert_eq!(msg2.as_bytes(), &decrypted2[..]);
 //!
 //! // decrypt last message.
 //! let (decrypted3, tag3) = dec_stream.pull(&cyphertext3, None).unwrap();
-//! assert_eq!(tag3, secretstream::TAG_FINAL);
+//! assert_eq!(tag3, Tag::Final);
 //! assert_eq!(msg3.as_bytes(), &decrypted3[..]);
 //!
 //! ```

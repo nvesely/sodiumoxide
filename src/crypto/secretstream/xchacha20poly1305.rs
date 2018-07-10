@@ -44,18 +44,18 @@ mod test {
         randombytes_into(&mut msg3);
         
         let (mut push_state, header) = init_push(&key);
-        let c1 = push_state.push(&msg1, None, TAG_MESSAGE);
-        let c2 = push_state.push(&msg2, None, TAG_PUSH);
-        let c3 = push_state.push(&msg3, None, TAG_FINAL);
+        let c1 = push_state.push(&msg1, None, Tag::Message);
+        let c2 = push_state.push(&msg2, None, Tag::Push);
+        let c3 = push_state.push(&msg3, None, Tag::Final);
 
         let mut pull_state = init_pull(&header, &key).unwrap();
         let (m1, t1) = pull_state.pull(&c1, None).unwrap();
         let (m2, t2) = pull_state.pull(&c2, None).unwrap();
         let (m3, t3) = pull_state.pull(&c3, None).unwrap();
         
-        assert_eq!(t1, TAG_MESSAGE);
-        assert_eq!(t2, TAG_PUSH);
-        assert_eq!(t3, TAG_FINAL);
+        assert_eq!(t1, Tag::Message);
+        assert_eq!(t2, Tag::Push);
+        assert_eq!(t3, Tag::Final);
         assert_eq!(msg1[..], m1[..]);
         assert_eq!(msg2[..], m2[..]);
         assert_eq!(msg3[..], m3[..]);
@@ -78,18 +78,18 @@ mod test {
         randombytes_into(&mut ad2);
         
         let (mut push_state, header) = init_push(&key);
-        let c1 = push_state.push(&msg1, Some(&ad1), TAG_MESSAGE);
-        let c2 = push_state.push(&msg2, Some(&ad2), TAG_PUSH);
-        let c3 = push_state.push(&msg3, None, TAG_FINAL);
+        let c1 = push_state.push(&msg1, Some(&ad1), Tag::Message);
+        let c2 = push_state.push(&msg2, Some(&ad2), Tag::Push);
+        let c3 = push_state.push(&msg3, None, Tag::Final);
 
         let mut pull_state = init_pull(&header, &key).unwrap();
         let (m1, t1) = pull_state.pull(&c1, Some(&ad1)).unwrap();
         let (m2, t2) = pull_state.pull(&c2, Some(&ad2)).unwrap();
         let (m3, t3) = pull_state.pull(&c3, None).unwrap();
         
-        assert_eq!(t1, TAG_MESSAGE);
-        assert_eq!(t2, TAG_PUSH);
-        assert_eq!(t3, TAG_FINAL);
+        assert_eq!(t1, Tag::Message);
+        assert_eq!(t2, Tag::Push);
+        assert_eq!(t3, Tag::Final);
         assert_eq!(msg1[..], m1[..]);
         assert_eq!(msg2[..], m2[..]);
         assert_eq!(msg3[..], m3[..]);
@@ -108,18 +108,18 @@ mod test {
         randombytes_into(&mut msg3);
         
         let (mut push_state, header) = init_push(&key);
-        let c1 = push_state.push(&msg1, None, TAG_MESSAGE);
-        let c2 = push_state.push(&msg2, None, TAG_REKEY);
-        let c3 = push_state.push(&msg3, None, TAG_FINAL);
+        let c1 = push_state.push(&msg1, None, Tag::Message);
+        let c2 = push_state.push(&msg2, None, Tag::Rekey);
+        let c3 = push_state.push(&msg3, None, Tag::Final);
 
         let mut pull_state = init_pull(&header, &key).unwrap();
         let (m1, t1) = pull_state.pull(&c1, None).unwrap();
         let (m2, t2) = pull_state.pull(&c2, None).unwrap();
         let (m3, t3) = pull_state.pull(&c3, None).unwrap();
         
-        assert_eq!(t1, TAG_MESSAGE);
-        assert_eq!(t2, TAG_REKEY);
-        assert_eq!(t3, TAG_FINAL);
+        assert_eq!(t1, Tag::Message);
+        assert_eq!(t2, Tag::Rekey);
+        assert_eq!(t3, Tag::Final);
         assert_eq!(msg1[..], m1[..]);
         assert_eq!(msg2[..], m2[..]);
         assert_eq!(msg3[..], m3[..]);
@@ -138,10 +138,10 @@ mod test {
         randombytes_into(&mut msg3);
         
         let (mut push_state, header) = init_push(&key);
-        let c1 = push_state.push(&msg1, None, TAG_MESSAGE);
-        let c2 = push_state.push(&msg2, None, TAG_PUSH);
+        let c1 = push_state.push(&msg1, None, Tag::Message);
+        let c2 = push_state.push(&msg2, None, Tag::Push);
         push_state.rekey();
-        let c3 = push_state.push(&msg3, None, TAG_FINAL);
+        let c3 = push_state.push(&msg3, None, Tag::Final);
 
         let mut pull_state = init_pull(&header, &key).unwrap();
         let (m1, t1) = pull_state.pull(&c1, None).unwrap();
@@ -149,9 +149,9 @@ mod test {
         pull_state.rekey();
         let (m3, t3) = pull_state.pull(&c3, None).unwrap();
         
-        assert_eq!(t1, TAG_MESSAGE);
-        assert_eq!(t2, TAG_PUSH);
-        assert_eq!(t3, TAG_FINAL);
+        assert_eq!(t1, Tag::Message);
+        assert_eq!(t2, Tag::Push);
+        assert_eq!(t3, Tag::Final);
         assert_eq!(msg1[..], m1[..]);
         assert_eq!(msg2[..], m2[..]);
         assert_eq!(msg3[..], m3[..]);

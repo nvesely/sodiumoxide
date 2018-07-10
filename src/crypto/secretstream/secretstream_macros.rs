@@ -14,6 +14,7 @@ macro_rules! stream_module (($state_name: ident,
 
 #[cfg(not(feature = "std"))] use prelude::*;
 use libc::c_ulonglong;
+use num_traits::{FromPrimitive, ToPrimitive};
 use randombytes::randombytes_into;
 use std::mem;
 
@@ -28,17 +29,28 @@ pub const HEADERBYTES: usize = $headerbytes as usize;
 /// The ciphertext length is guaranteed to always be message length plus `ABYTES`.
 pub const ABYTES: usize = $abytes as usize;
 
-/// Tag message
-pub const TAG_MESSAGE: u8 = $tag_message as u8;
-
-/// Tag push
-pub const TAG_PUSH: u8 = $tag_push as u8;
-
-/// Tag rekey
-pub const TAG_REKEY: u8 = $tag_rekey as u8;
-
-/// Tag final
-pub const TAG_FINAL: u8 = $tag_final as u8;
+/// A tag is attached to each message. A typical encrypted stream simply attaches
+/// `Tag::Message` as a tag to all messages, except the last one which is tagged
+/// as `Tag::Final`.
+#[repr(u8)]
+#[derive(Clone, Copy, Debug, PartialEq, Primitive)]
+pub enum Tag {
+    /// The most common tag, that doesn't add any information about the nature of
+    /// the message.
+    Message = $tag_message as u8,
+    /// Indicates that the message marks the end of a set of messages, but not
+    /// the end of the stream. For example, a huge JSON string sent as multiple
+    /// chunks can use this tag to indicate to the application that the string is
+    /// complete and that it can be decoded. But the stream itself is not closed,
+    /// and more data may follow.
+    Push = $tag_push as u8,
+    /// "Forget" the key used to encrypt this message and the previous ones, and
+    /// derive a new secret key.
+    Rekey = $tag_rekey as u8,
+    /// Indicates that the message marks the end of the stream, and erases the
+    /// secret key used to encrypt the previous sequence.
+    Final = $tag_final as u8,
+}
 
 new_type! {
     /// `Key` for symmetric encryption
@@ -91,7 +103,7 @@ impl State {
 
     /// encrypts a message `m` using the `state` and the `tag`.
     /// Additional data ad of length adlen can be included in the computation of the authentication tag. If no additional data is required, ad can be None.
-    pub fn push(&mut self, m: &[u8], ad: Option<&[u8]>, tag: u8) -> Vec<u8> {
+    pub fn push(&mut self, m: &[u8], ad: Option<&[u8]>, tag: Tag) -> Vec<u8> {
         let (ad_p, ad_len) = ad.map(|ad| (ad.as_ptr(), ad.len() as c_ulonglong)).unwrap_or((0 as *const _, 0));
         let mut c = Vec::with_capacity(m.len() + ABYTES);
         let mut clen = c.len() as c_ulonglong;
@@ -104,21 +116,22 @@ impl State {
                        m.len() as c_ulonglong,
                        ad_p,
                        ad_len,
-                       tag);
+                       tag.to_u8().unwrap());
             c.set_len(clen as usize);
         }
         c
     }
     
-    /// function verifies that c (a sequence of bytes) contains a valid ciphertext and authentication tag for the given state state and optional authenticated data ad of length adlen bytes.
-    /// If the ciphertext appears to be invalid, the function returns Err.
-    /// If the authentication tag appears to be correct, the decrypted message is returned with tag.
-    /// Applications will typically call this function in a loop, until a message with the crypto_secretstream_xchacha20poly1305_TAG_FINAL tag is found.
-    pub fn pull(&mut self, c: &[u8], ad: Option<&[u8]>) -> Result<(Vec<u8>, u8),()> {
+    /// Decrypt a ciphertext `c` after verifying it's authentication tag and
+    /// optional associated data `ad`. If the ciphertext appears to be invalid, the
+    /// function returns `Err(())`. If the authentication tag appears to be correct,
+    /// the decrypted message is returned with tag. Applications will typically
+    /// call this function in a loop, until a message with `Tag::Final` is found.
+    pub fn pull(&mut self, c: &[u8], ad: Option<&[u8]>) -> Result<(Vec<u8>, Tag),()> {
         let (ad_p, ad_len) = ad.map(|ad| (ad.as_ptr(), ad.len() as c_ulonglong)).unwrap_or((0 as *const _, 0));
         let mut m = Vec::with_capacity(c.len() - ABYTES);
         let mut mlen = m.len() as c_ulonglong;
-        let mut tag: u8 = 0;
+        let mut tag: u8 = unsafe { mem::uninitialized() };
         
         unsafe {
             if $pull_name(&mut self.0,
@@ -133,7 +146,13 @@ impl State {
             }
             m.set_len(mlen as usize);
         }
-        Ok((m, tag))
+
+        let tag = Tag::from_u8(tag);
+        if tag.is_some() {
+            Ok((m, tag.unwrap()))
+        } else {
+            Err(())
+        }
     }
     
     /// Explicit rekeying, updates the state, but doesn't add any information about the key change to the stream.
