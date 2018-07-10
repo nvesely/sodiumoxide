@@ -1,4 +1,4 @@
-//! `crypto_stream_chacha20` (Chacha20)
+//! `crypto_secretstream_xchacha20poly1305` (XChaCha20-Poly1305)
 use ffi::{crypto_secretstream_xchacha20poly1305_state,
           crypto_secretstream_xchacha20poly1305_init_push,
           crypto_secretstream_xchacha20poly1305_push,
