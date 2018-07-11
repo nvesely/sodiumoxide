@@ -7,6 +7,7 @@ macro_rules! stream_module (($state_name: ident,
                              $keybytes:expr,
                              $headerbytes:expr,
                              $abytes:expr,
+                             $msgbytes_max:expr,
                              $tag_message: expr,
                              $tag_push: expr,
                              $tag_rekey: expr,
@@ -17,6 +18,9 @@ use libc::c_ulonglong;
 use num_traits::{FromPrimitive, ToPrimitive};
 use randombytes::randombytes_into;
 use std::mem;
+
+/// The maximum length of an individual message.
+pub const MSGBYTES_MAX: usize = $msgbytes_max as usize;
 
 /// Number of bytes in a `Key`.
 pub const KEYBYTES: usize = $keybytes as usize;
@@ -103,7 +107,10 @@ impl State {
 
     /// encrypts a message `m` using the `state` and the `tag`.
     /// Additional data ad of length adlen can be included in the computation of the authentication tag. If no additional data is required, ad can be None.
-    pub fn push(&mut self, m: &[u8], ad: Option<&[u8]>, tag: Tag) -> Vec<u8> {
+    pub fn push(&mut self, m: &[u8], ad: Option<&[u8]>, tag: Tag) -> Result<Vec<u8>, ()> {
+        if m.len() > MSGBYTES_MAX {
+            return Err(());
+        }
         let (ad_p, ad_len) = ad.map(|ad| (ad.as_ptr(), ad.len() as c_ulonglong)).unwrap_or((0 as *const _, 0));
         let mut c = Vec::with_capacity(m.len() + ABYTES);
         let mut clen = c.len() as c_ulonglong;
@@ -119,7 +126,7 @@ impl State {
                        tag.to_u8().unwrap());
             c.set_len(clen as usize);
         }
-        c
+        Ok(c)
     }
     
     /// Decrypt a ciphertext `c` after verifying it's authentication tag and
@@ -128,9 +135,16 @@ impl State {
     /// the decrypted message is returned with tag. Applications will typically
     /// call this function in a loop, until a message with `Tag::Final` is found.
     pub fn pull(&mut self, c: &[u8], ad: Option<&[u8]>) -> Result<(Vec<u8>, Tag),()> {
+        // An empty message will still be at least ABYTES.
+        if c.len() < ABYTES {
+            return Err(());
+        }
         let (ad_p, ad_len) = ad.map(|ad| (ad.as_ptr(), ad.len() as c_ulonglong)).unwrap_or((0 as *const _, 0));
         let mut m = Vec::with_capacity(c.len() - ABYTES);
         let mut mlen = m.len() as c_ulonglong;
+        if (mlen as usize) < MSGBYTES_MAX {
+            return Err(());
+        }
         let mut tag: u8 = unsafe { mem::uninitialized() };
         
         unsafe {
